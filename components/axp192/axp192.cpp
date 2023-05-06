@@ -54,15 +54,18 @@ void AXP192Component::begin(bool disableLDO2, bool disableLDO3, bool disableRTC,
         // Set LDO2 & LDO3(TFT_LED & TFT) 3.0V
         Write1Byte(0x28, 0xcc);	
 
-  // axp: check v-bus status
-  if (Read8bit(0x00) & 0x08) {
-    Write1Byte(0x30, Read8bit(0x30) | 0x80);
-    // if v-bus can use, disable M-Bus 5V output to input
-    this->SetBusPowerMode(kMBusModeInput);
-  } else {
-    // if not, enable M-Bus 5V output
-    this->SetBusPowerMode(kMBusModeOutput);
-  }
+        // axp: check v-bus status
+        if (Read8bit(0x00) & 0x08) {
+            Write1Byte(0x30, Read8bit(0x30) | 0x80);
+            // if v-bus can use, disable M-Bus 5V output to input
+            this->SetBusPowerMode(kMBusModeInput);
+            ESP_LOGD(TAG, "Disable M-Bus 5V output to input");
+
+            } else {
+            // if not, enable M-Bus 5V output
+            this->SetBusPowerMode(kMBusModeOutput);
+            ESP_LOGD(TAG, "Enable M-Bus 5V output to input");
+            }
 
 
     }
