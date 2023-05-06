@@ -41,6 +41,8 @@ void AXP192Component::update() {
 
 void AXP192Component::begin(bool disableLDO2, bool disableLDO3, bool disableRTC, bool disableDCDC1, bool disableDCDC3)
 {  
+    ESP_LOGD(TAG, "Starting with model=%s", this->model_);
+
   switch (this->model_) {
     case AXP192_M5STICKC:
     {
