@@ -58,10 +58,10 @@ void AXP192Component::begin(bool disableLDO2, bool disableLDO3, bool disableRTC,
   if (Read8bit(0x00) & 0x08) {
     Write1Byte(0x30, Read8bit(0x30) | 0x80);
     // if v-bus can use, disable M-Bus 5V output to input
-    SetBusPowerMode(kMBusModeInput);
+    this->SetBusPowerMode(kMBusModeInput);
   } else {
     // if not, enable M-Bus 5V output
-    SetBusPowerMode(kMBusModeOutput);
+    this->SetBusPowerMode(kMBusModeOutput);
   }
 
 
