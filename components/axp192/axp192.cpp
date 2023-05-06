@@ -575,6 +575,29 @@ void AXP192Component::SetAdcState(bool state)
     Write1Byte(0x82, state ? 0xff : 0x00);
 }
 
+void AXP192Component::SetBusPowerMode(uint8_t state) {
+  uint8_t data;
+  if (state == 0) {
+    // Set GPIO to 3.3V (LDO OUTPUT mode)
+    data = Read8bit(0x91);
+    Write1Byte(0x91, (data & 0x0F) | 0xF0);
+    // Set GPIO0 to LDO OUTPUT, pullup N_VBUSEN to disable VBUS supply from BUS_5V
+    data = Read8bit(0x90);
+    Write1Byte(0x90, (data & 0xF8) | 0x02);
+    // Set EXTEN to enable 5v boost
+    data = Read8bit(0x10);
+    Write1Byte(0x10, data | 0x04);
+  } else {
+    // Set EXTEN to disable 5v boost
+    data = Read8bit(0x10);
+    Write1Byte(0x10, data & ~0x04);
+    // Set GPIO0 to float, using enternal pulldown resistor to enable VBUS supply from BUS_5V
+    data = Read8bit(0x90);
+    Write1Byte(0x90, (data & 0xF8) | 0x07);
+  }
+}
+
+
 std::string AXP192Component::GetStartupReason() {
   esp_reset_reason_t reset_reason = ::esp_reset_reason();
   if (reset_reason == ESP_RST_DEEPSLEEP) {
@@ -622,24 +645,4 @@ std::string AXP192Component::GetStartupReason() {
 }
 }
 
-void AXP192Component::SetBusPowerMode(uint8_t state) {
-  uint8_t data;
-  if (state == 0) {
-    // Set GPIO to 3.3V (LDO OUTPUT mode)
-    data = Read8bit(0x91);
-    Write1Byte(0x91, (data & 0x0F) | 0xF0);
-    // Set GPIO0 to LDO OUTPUT, pullup N_VBUSEN to disable VBUS supply from BUS_5V
-    data = Read8bit(0x90);
-    Write1Byte(0x90, (data & 0xF8) | 0x02);
-    // Set EXTEN to enable 5v boost
-    data = Read8bit(0x10);
-    Write1Byte(0x10, data | 0x04);
-  } else {
-    // Set EXTEN to disable 5v boost
-    data = Read8bit(0x10);
-    Write1Byte(0x10, data & ~0x04);
-    // Set GPIO0 to float, using enternal pulldown resistor to enable VBUS supply from BUS_5V
-    data = Read8bit(0x90);
-    Write1Byte(0x90, (data & 0xF8) | 0x07);
-  }
-}
+
