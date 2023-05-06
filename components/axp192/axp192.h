@@ -119,7 +119,7 @@ protected:
     
     void PowerOff();
 
-    void SetBusPowerMode( uint8_t state )
+    void SetBusPowerMode( uint8_t state );
 
     
     void Write1Byte( uint8_t Addr ,  uint8_t Data );
