@@ -28,6 +28,11 @@ enum AXP192Model {
 #define CURRENT_630MA  (0b0110)
 #define CURRENT_700MA  (0b0111)
 
+typedef enum {
+  kMBusModeOutput = 0,  // powered by USB or Battery
+  kMBusModeInput = 1    // powered by outside input
+} mbus_mode_t;
+
 class AXP192Component : public PollingComponent, public i2c::I2CDevice {
 public:
   void set_batterylevel_sensor(sensor::Sensor *batterylevel_sensor) { batterylevel_sensor_ = batterylevel_sensor; }

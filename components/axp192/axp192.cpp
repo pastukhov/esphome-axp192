@@ -53,6 +53,18 @@ void AXP192Component::begin(bool disableLDO2, bool disableLDO3, bool disableRTC,
         Write1Byte(0x27, 0xcc);	
         // Set LDO2 & LDO3(TFT_LED & TFT) 3.0V
         Write1Byte(0x28, 0xcc);	
+
+  // axp: check v-bus status
+  if (Read8bit(0x00) & 0x08) {
+    Write1Byte(0x30, Read8bit(0x30) | 0x80);
+    // if v-bus can use, disable M-Bus 5V output to input
+    SetBusPowerMode(kMBusModeInput);
+  } else {
+    // if not, enable M-Bus 5V output
+    SetBusPowerMode(kMBusModeOutput);
+  }
+
+
     }
     case AXP192_M5TOUGH:
     {
@@ -610,3 +622,24 @@ std::string AXP192Component::GetStartupReason() {
 }
 }
 
+void AXP192Component::SetBusPowerMode(uint8_t state) {
+  uint8_t data;
+  if (state == 0) {
+    // Set GPIO to 3.3V (LDO OUTPUT mode)
+    data = Read8bit(0x91);
+    Write1Byte(0x91, (data & 0x0F) | 0xF0);
+    // Set GPIO0 to LDO OUTPUT, pullup N_VBUSEN to disable VBUS supply from BUS_5V
+    data = Read8bit(0x90);
+    Write1Byte(0x90, (data & 0xF8) | 0x02);
+    // Set EXTEN to enable 5v boost
+    data = Read8bit(0x10);
+    Write1Byte(0x10, data | 0x04);
+  } else {
+    // Set EXTEN to disable 5v boost
+    data = Read8bit(0x10);
+    Write1Byte(0x10, data & ~0x04);
+    // Set GPIO0 to float, using enternal pulldown resistor to enable VBUS supply from BUS_5V
+    data = Read8bit(0x90);
+    Write1Byte(0x90, (data & 0xF8) | 0x07);
+  }
+}
