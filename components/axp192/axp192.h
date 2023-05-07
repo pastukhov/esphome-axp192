@@ -28,7 +28,7 @@ enum AXP192Model {
 #define CURRENT_630MA  (0b0110)
 #define CURRENT_700MA  (0b0111)
 
-typedef enum {
+enum {
   kMBusModeOutput = 0,  // powered by USB or Battery
   kMBusModeInput = 1    // powered by outside input
 } mbus_mode_t;
@@ -130,6 +130,28 @@ protected:
     uint32_t Read24bit( uint8_t Addr );
     uint32_t Read32bit( uint8_t Addr );
     void ReadBuff( uint8_t Addr , uint8_t Size , uint8_t *Buff );
+    void SetESPVoltage(uint16_t voltage);
+    void SetLcdVoltage(uint16_t voltage);
+    void SetLDOVoltage(uint8_t number, uint16_t voltage);
+    void SetLDOEnable(uint8_t number, bool state);
+    void SetDCDC3(bool State);
+    void SetLed(uint8_t state);
+    void SetCHGCurrent(uint8_t state);
+    void SetLCDRSet(bool state);
+    void SetPeripherialsPower(uint8_t state);
+    void SetDCVoltage(uint8_t number, uint16_t voltage);
+    uint8_t calcVoltageData(uint16_t value, uint16_t maxv, uint16_t minv,  uint16_t step);
+    void ScreenBreath(int brightness);
+    void PrepareToSleep(void);
+    float GetBatteryLevel(void);
+    void RestoreFromLightSleep(void);
+    uint8_t GetWarningLeve(void);
+    uint8_t AXPInState();
+    bool isACIN();
+    bool isCharging();
+    bool isVBUS();
+    void SetSpkEnable(uint8_t state);
+
 }; 
 
 }
