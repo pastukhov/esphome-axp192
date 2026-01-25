@@ -1,7 +1,7 @@
 #include "axp192.h"
 #include "esphome/core/log.h"
 #include "esp_sleep.h"
-#include <Esp.h>
+#include "esp_system.h"
 
 namespace esphome {
 namespace axp192 {
@@ -31,7 +31,7 @@ void AXP192Component::setup()
             ESP_LOGD(TAG, "First power on, restarting ESP...");
 
             // Reboot the ESP with the axp initialised
-            ESP.restart();
+            esp_restart();
         }
         break;
     }
