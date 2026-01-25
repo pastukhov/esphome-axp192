@@ -43,6 +43,9 @@ sensor:
     battery_level:
       name: "${upper_devicename} Battery Level"
       id: "${devicename}_batterylevel"
+    charging:
+      name: "Charging Status"
+      id: "chargingstatus"
 
   - platform: wifi_signal
     name: ${upper_devicename} WiFi Signal
