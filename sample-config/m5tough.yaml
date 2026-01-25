@@ -45,6 +45,9 @@ sensor:
     i2c_id: bus_a
     update_interval: 3s
     brightness: 75%
+    charging:
+      name: "Charging Status"
+      id: "chargingstatus"
 
   - platform: uptime
     name: "Uptime"
