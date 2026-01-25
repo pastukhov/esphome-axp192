@@ -5,6 +5,8 @@ This custom component it to implement support for the AXP192 for both the M5Stic
 
 *Update - January 2026*
 
+**ESP-IDF Framework Support**: This component is now fully compatible with both Arduino and ESP-IDF frameworks! You can use either framework type in your ESPHome configuration.
+
 **Charging Status Sensor**: Added support for battery charging state detection via a binary sensor. The component now exposes a `charging` binary sensor that indicates whether the battery is currently being charged.
 
 *Update - 17th April 2023*  
