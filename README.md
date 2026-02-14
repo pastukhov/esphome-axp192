@@ -4,6 +4,18 @@ Custom ESPHome component for the AXP192 PMU used on `M5STICKC`, `M5CORE2`, and `
 
 It supports both Arduino and ESP-IDF based ESPHome builds.
 
+*Update - February 2026*
+
+**Expanded PMU API**: Added dedicated `binary_sensor`, `switch`, `button`, and `number` platforms in addition to telemetry sensors. This includes PMU rail/GPIO controls and charger current limit control.
+
+*Update - February 2026*
+
+**Validation & compatibility updates**: Added compile-time model validation for Core2-specific switches (`speaker_enable`, `green_led`), updated examples for current ESPHome syntax, and validated builds for `m5stickc`, `m5core2`, and `m5tough` sample configs.
+
+*Update - February 2026*
+
+**Hardware verification (Core2)**: Confirmed compile, flash, and runtime telemetry on real M5Stack Core2 hardware with AXP192 metrics and charging state reporting.
+
 ## Installation
 
 Use as an external component.
