@@ -728,13 +728,15 @@ void AXP192Component::SetDCDC3(bool State)
 
 void AXP192Component::SetGPIO1(bool State)
 {
-    uint8_t reg = Read8bit(0x92) & 0xFD;
+    // Clear GPIO1 mode bits [1:0] first, then set output-high mode when enabled.
+    uint8_t reg = Read8bit(0x92) & 0xFC;
     Write1Byte(0x92, State ? (reg | 0x01) : reg);
 }
 
 void AXP192Component::SetGPIO2(bool State)
 {
-    uint8_t reg = Read8bit(0x93) & 0xFB;
+    // Clear GPIO2 mode bits [1:0] first, then set output-high mode when enabled.
+    uint8_t reg = Read8bit(0x93) & 0xFC;
     Write1Byte(0x93, State ? (reg | 0x01) : reg);
 }
 
