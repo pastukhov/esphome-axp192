@@ -1,5 +1,6 @@
 #include "axp192.h"
 #include "esphome/core/log.h"
+#include <cmath>
 #include "esp_sleep.h"
 #include "esp_system.h"
 
@@ -42,11 +43,30 @@ void AXP192Component::dump_config() {
   ESP_LOGCONFIG(TAG, "AXP192:");
   LOG_I2C_DEVICE(this);
   LOG_SENSOR("  ", "Battery Level", this->batterylevel_sensor_);
+  LOG_BINARY_SENSOR("  ", "Charging", this->charging_sensor_);
+  LOG_SENSOR("  ", "Battery Voltage", this->battery_voltage_sensor_);
+  LOG_SENSOR("  ", "Battery Charge Current", this->battery_charge_current_sensor_);
+  LOG_SENSOR("  ", "Battery Discharge Current", this->battery_discharge_current_sensor_);
+  LOG_SENSOR("  ", "Battery Power", this->battery_power_sensor_);
+  LOG_SENSOR("  ", "VBUS Voltage", this->vbus_voltage_sensor_);
+  LOG_SENSOR("  ", "VBUS Current", this->vbus_current_sensor_);
+  LOG_SENSOR("  ", "VIN Voltage", this->vin_voltage_sensor_);
+  LOG_SENSOR("  ", "VIN Current", this->vin_current_sensor_);
+  LOG_SENSOR("  ", "APS Voltage", this->aps_voltage_sensor_);
+  LOG_SENSOR("  ", "PMU Temperature", this->pmu_temperature_sensor_);
+  LOG_SENSOR("  ", "Coulomb In", this->coulomb_in_sensor_);
+  LOG_SENSOR("  ", "Coulomb Out", this->coulomb_out_sensor_);
+  LOG_SENSOR("  ", "Coulomb Delta", this->coulomb_delta_sensor_);
+  LOG_BINARY_SENSOR("  ", "VBUS Present", this->vbus_present_sensor_);
+  LOG_BINARY_SENSOR("  ", "Battery Present", this->battery_present_sensor_);
+  LOG_BINARY_SENSOR("  ", "Warning Level", this->warning_level_sensor_);
 }
 
 float AXP192Component::get_setup_priority() const { return setup_priority::DATA; }
 
 void AXP192Component::update() {
+    const bool battery_present = GetBatState();
+    const bool vbus_present = GetVBusPresent();
 
     if (this->batterylevel_sensor_ != nullptr) {
       // To be fixed
@@ -58,14 +78,104 @@ void AXP192Component::update() {
       if (batterylevel > 100.) {
         batterylevel = 100;
       }
+      if (batterylevel < 0.) {
+        batterylevel = 0;
+      }
       this->batterylevel_sensor_->publish_state(batterylevel);
     }
 
+    if (this->battery_voltage_sensor_ != nullptr) {
+      const float value = battery_present ? GetBatVoltage() : 0.0f;
+      if (std::isfinite(value)) {
+        this->battery_voltage_sensor_->publish_state(value);
+      }
+    }
+    if (this->battery_charge_current_sensor_ != nullptr) {
+      const float value = battery_present ? (GetBatChargeCurrent() / 1000.0f) : 0.0f;
+      if (std::isfinite(value)) {
+        this->battery_charge_current_sensor_->publish_state(value);
+      }
+    }
+    if (this->battery_discharge_current_sensor_ != nullptr) {
+      const float value = battery_present ? (Read13Bit(0x7C) * 0.5f / 1000.0f) : 0.0f;
+      if (std::isfinite(value)) {
+        this->battery_discharge_current_sensor_->publish_state(value);
+      }
+    }
+    if (this->battery_power_sensor_ != nullptr) {
+      const float value = battery_present ? (GetBatPower() / 1000.0f) : 0.0f;
+      if (std::isfinite(value)) {
+        this->battery_power_sensor_->publish_state(value);
+      }
+    }
+    if (this->vbus_voltage_sensor_ != nullptr) {
+      const float value = vbus_present ? GetVBusVoltage() : 0.0f;
+      if (std::isfinite(value)) {
+        this->vbus_voltage_sensor_->publish_state(value);
+      }
+    }
+    if (this->vbus_current_sensor_ != nullptr) {
+      const float value = vbus_present ? (GetVBusCurrent() / 1000.0f) : 0.0f;
+      if (std::isfinite(value)) {
+        this->vbus_current_sensor_->publish_state(value);
+      }
+    }
+    if (this->vin_voltage_sensor_ != nullptr) {
+      const float value = GetVinVoltage();
+      if (std::isfinite(value)) {
+        this->vin_voltage_sensor_->publish_state(value);
+      }
+    }
+    if (this->vin_current_sensor_ != nullptr) {
+      const float value = GetVinCurrent() / 1000.0f;
+      if (std::isfinite(value)) {
+        this->vin_current_sensor_->publish_state(value);
+      }
+    }
+    if (this->aps_voltage_sensor_ != nullptr) {
+      const float value = GetAPSVoltage();
+      if (std::isfinite(value)) {
+        this->aps_voltage_sensor_->publish_state(value);
+      }
+    }
+    if (this->pmu_temperature_sensor_ != nullptr) {
+      const float value = GetTempInAXP192();
+      if (std::isfinite(value)) {
+        this->pmu_temperature_sensor_->publish_state(value);
+      }
+    }
+    if (this->coulomb_in_sensor_ != nullptr) {
+      const float value = battery_present ? GetBatCoulombInput() : 0.0f;
+      if (std::isfinite(value)) {
+        this->coulomb_in_sensor_->publish_state(value);
+      }
+    }
+    if (this->coulomb_out_sensor_ != nullptr) {
+      const float value = battery_present ? GetBatCoulombOut() : 0.0f;
+      if (std::isfinite(value)) {
+        this->coulomb_out_sensor_->publish_state(value);
+      }
+    }
+    if (this->coulomb_delta_sensor_ != nullptr) {
+      const float value = battery_present ? GetCoulombData() : 0.0f;
+      if (std::isfinite(value)) {
+        this->coulomb_delta_sensor_->publish_state(value);
+      }
+    }
+
     if (this->charging_sensor_ != nullptr) {
-        bool battery_state = GetBatState();
       bool charging = GetChargingState();
-      ESP_LOGD(TAG, "Got Charging=%d state=%d", charging, battery_state);
+      ESP_LOGD(TAG, "Got Charging=%d", charging);
       this->charging_sensor_->publish_state(charging);
+    }
+    if (this->vbus_present_sensor_ != nullptr) {
+      this->vbus_present_sensor_->publish_state(vbus_present);
+    }
+    if (this->battery_present_sensor_ != nullptr) {
+      this->battery_present_sensor_->publish_state(battery_present);
+    }
+    if (this->warning_level_sensor_ != nullptr) {
+      this->warning_level_sensor_->publish_state(GetWarningLevel() != 0);
     }
 
     UpdateBrightness();
@@ -258,19 +368,19 @@ void AXP192Component::UpdateBrightness()
 
 bool AXP192Component::GetBatState()
 {
-    if( Read8bit(0x01) | 0x20 )
-        return true;
-    else
-        return false;
+    return (Read8bit(0x01) & 0x20) != 0;
 }
 
 bool AXP192Component::GetChargingState()
 {
-    // reading 0x00 bit 6
-    if( (Read8bit(0x00) >> 5) & 0x01 )
-        return true;
-    else
-        return false;
+    // REG01H bit6: charging status
+    return ((Read8bit(0x01) >> 6) & 0x01) != 0;
+}
+
+bool AXP192Component::GetVBusPresent()
+{
+    // REG00H bit5: external power VBUS existence
+    return (Read8bit(0x00) & 0x20) != 0;
 }
 
 uint8_t AXP192Component::GetBatData()
@@ -594,6 +704,40 @@ void AXP192Component::SetLDO3(bool State)
     Write1Byte( 0x12 , buf );
 }
 
+void AXP192Component::SetDCDC1(bool State)
+{
+    uint8_t buf = Read8bit(0x12);
+    if (State) {
+        buf = (1 << 0) | buf;
+    } else {
+        buf = ~(1 << 0) & buf;
+    }
+    Write1Byte(0x12, buf);
+}
+
+void AXP192Component::SetDCDC3(bool State)
+{
+    uint8_t buf = Read8bit(0x12);
+    if (State) {
+        buf = (1 << 1) | buf;
+    } else {
+        buf = ~(1 << 1) & buf;
+    }
+    Write1Byte(0x12, buf);
+}
+
+void AXP192Component::SetGPIO1(bool State)
+{
+    uint8_t reg = Read8bit(0x92) & 0xFD;
+    Write1Byte(0x92, State ? (reg | 0x01) : reg);
+}
+
+void AXP192Component::SetGPIO2(bool State)
+{
+    uint8_t reg = Read8bit(0x93) & 0xFB;
+    Write1Byte(0x93, State ? (reg | 0x01) : reg);
+}
+
 void AXP192Component::SetChargeCurrent(uint8_t current)
 {
     uint8_t buf = Read8bit(0x33);
@@ -610,6 +754,103 @@ void AXP192Component::SetAdcState(bool state)
 {
     Write1Byte(0x82, state ? 0xff : 0x00);
 }
+
+void AXP192Component::set_switch_state(AXP192SwitchType type, bool state)
+{
+    switch (type) {
+      case AXP192_SWITCH_LDO2:
+        this->SetLDO2(state);
+        break;
+      case AXP192_SWITCH_LDO3:
+        this->SetLDO3(state);
+        break;
+      case AXP192_SWITCH_DCDC1:
+        this->SetDCDC1(state);
+        break;
+      case AXP192_SWITCH_DCDC3:
+        this->SetDCDC3(state);
+        break;
+      case AXP192_SWITCH_SPEAKER_ENABLE:
+        if (this->model_ != AXP192_M5CORE2) {
+          ESP_LOGW(TAG, "speaker_enable is only supported on M5CORE2");
+          return;
+        }
+        this->SetGPIO2(state);
+        break;
+      case AXP192_SWITCH_GREEN_LED:
+        if (this->model_ != AXP192_M5CORE2) {
+          ESP_LOGW(TAG, "green_led is only supported on M5CORE2");
+          return;
+        }
+        this->SetGPIO1(state);
+        break;
+      case AXP192_SWITCH_ADC_ENABLE:
+        this->SetAdcState(state);
+        break;
+      default:
+        return;
+    }
+}
+
+#ifdef USE_SWITCH
+void AXP192Switch::write_state(bool state)
+{
+    this->parent_->set_switch_state(this->type_, state);
+    this->publish_state(state);
+}
+#endif
+
+void AXP192Component::press_button(AXP192ButtonType type)
+{
+    switch (type) {
+      case AXP192_BUTTON_POWER_OFF:
+        this->PowerOff();
+        break;
+      case AXP192_BUTTON_COULOMB_CLEAR:
+        this->SetCoulombClear();
+        break;
+      default:
+        return;
+    }
+}
+
+#ifdef USE_BUTTON
+void AXP192Button::press_action()
+{
+    this->parent_->press_button(this->type_);
+}
+#endif
+
+void AXP192Component::set_number_value(AXP192NumberType type, float value)
+{
+    switch (type) {
+      case AXP192_NUMBER_CHARGE_CURRENT_LIMIT: {
+        // AXP192 supports discrete limits: 100, 190, 280, 360, 450, 550, 630, 700 mA
+        static const float limits[] = {100.0f, 190.0f, 280.0f, 360.0f, 450.0f, 550.0f, 630.0f, 700.0f};
+        uint8_t idx = 0;
+        float best_error = fabsf(value - limits[0]);
+        for (uint8_t i = 1; i < 8; i++) {
+          const float err = fabsf(value - limits[i]);
+          if (err < best_error) {
+            idx = i;
+            best_error = err;
+          }
+        }
+        this->SetChargeCurrent(idx);
+        break;
+      }
+      default:
+        return;
+    }
+}
+
+#ifdef USE_NUMBER
+void AXP192Number::control(float value)
+{
+    this->parent_->set_number_value(this->type_, value);
+    this->publish_state(value);
+}
+#endif
 
 std::string AXP192Component::GetStartupReason() {
   esp_reset_reason_t reset_reason = ::esp_reset_reason();
@@ -657,4 +898,3 @@ std::string AXP192Component::GetStartupReason() {
 
 }
 }
-

@@ -5,6 +5,15 @@
 #include "esphome/components/sensor/sensor.h"
 #include "esphome/components/binary_sensor/binary_sensor.h"
 #include "esphome/components/i2c/i2c.h"
+#ifdef USE_SWITCH
+#include "esphome/components/switch/switch.h"
+#endif
+#ifdef USE_BUTTON
+#include "esphome/components/button/button.h"
+#endif
+#ifdef USE_NUMBER
+#include "esphome/components/number/number.h"
+#endif
 
 namespace esphome {
 namespace axp192 {
@@ -13,6 +22,25 @@ enum AXP192Model {
   AXP192_M5STICKC = 0,
   AXP192_M5CORE2,
   AXP192_M5TOUGH,
+};
+
+enum AXP192SwitchType {
+  AXP192_SWITCH_LDO2 = 0,
+  AXP192_SWITCH_LDO3,
+  AXP192_SWITCH_DCDC1,
+  AXP192_SWITCH_DCDC3,
+  AXP192_SWITCH_SPEAKER_ENABLE,
+  AXP192_SWITCH_GREEN_LED,
+  AXP192_SWITCH_ADC_ENABLE,
+};
+
+enum AXP192ButtonType {
+  AXP192_BUTTON_POWER_OFF = 0,
+  AXP192_BUTTON_COULOMB_CLEAR,
+};
+
+enum AXP192NumberType {
+  AXP192_NUMBER_CHARGE_CURRENT_LIMIT = 0,
 };
 
 #define SLEEP_MSEC(us) (((uint64_t)us) * 1000L)
@@ -33,8 +61,28 @@ class AXP192Component : public PollingComponent, public i2c::I2CDevice {
 public:
   void set_batterylevel_sensor(sensor::Sensor *batterylevel_sensor) { batterylevel_sensor_ = batterylevel_sensor; }
   void set_charging_sensor(binary_sensor::BinarySensor *charging_sensor) { charging_sensor_ = charging_sensor; }
+  void set_battery_voltage_sensor(sensor::Sensor *sensor) { battery_voltage_sensor_ = sensor; }
+  void set_battery_charge_current_sensor(sensor::Sensor *sensor) { battery_charge_current_sensor_ = sensor; }
+  void set_battery_discharge_current_sensor(sensor::Sensor *sensor) { battery_discharge_current_sensor_ = sensor; }
+  void set_battery_power_sensor(sensor::Sensor *sensor) { battery_power_sensor_ = sensor; }
+  void set_vbus_voltage_sensor(sensor::Sensor *sensor) { vbus_voltage_sensor_ = sensor; }
+  void set_vbus_current_sensor(sensor::Sensor *sensor) { vbus_current_sensor_ = sensor; }
+  void set_vin_voltage_sensor(sensor::Sensor *sensor) { vin_voltage_sensor_ = sensor; }
+  void set_vin_current_sensor(sensor::Sensor *sensor) { vin_current_sensor_ = sensor; }
+  void set_aps_voltage_sensor(sensor::Sensor *sensor) { aps_voltage_sensor_ = sensor; }
+  void set_pmu_temperature_sensor(sensor::Sensor *sensor) { pmu_temperature_sensor_ = sensor; }
+  void set_coulomb_in_sensor(sensor::Sensor *sensor) { coulomb_in_sensor_ = sensor; }
+  void set_coulomb_out_sensor(sensor::Sensor *sensor) { coulomb_out_sensor_ = sensor; }
+  void set_coulomb_delta_sensor(sensor::Sensor *sensor) { coulomb_delta_sensor_ = sensor; }
+  void set_vbus_present_sensor(binary_sensor::BinarySensor *sensor) { vbus_present_sensor_ = sensor; }
+  void set_battery_present_sensor(binary_sensor::BinarySensor *sensor) { battery_present_sensor_ = sensor; }
+  void set_warning_level_sensor(binary_sensor::BinarySensor *sensor) { warning_level_sensor_ = sensor; }
   void set_brightness(float brightness) { brightness_ = brightness; }
   void set_model(AXP192Model model) { this->model_ = model; }
+  AXP192Model get_model() const { return this->model_; }
+  void set_switch_state(AXP192SwitchType type, bool state);
+  void press_button(AXP192ButtonType type);
+  void set_number_value(AXP192NumberType type, float value);
 
   // ========== INTERNAL METHODS ==========
   // (In most use cases you won't need these)
@@ -47,8 +95,24 @@ private:
     static std::string GetStartupReason();
 
 protected:
-    sensor::Sensor *batterylevel_sensor_;
-    binary_sensor::BinarySensor *charging_sensor_;
+    sensor::Sensor *batterylevel_sensor_{nullptr};
+    binary_sensor::BinarySensor *charging_sensor_{nullptr};
+    sensor::Sensor *battery_voltage_sensor_{nullptr};
+    sensor::Sensor *battery_charge_current_sensor_{nullptr};
+    sensor::Sensor *battery_discharge_current_sensor_{nullptr};
+    sensor::Sensor *battery_power_sensor_{nullptr};
+    sensor::Sensor *vbus_voltage_sensor_{nullptr};
+    sensor::Sensor *vbus_current_sensor_{nullptr};
+    sensor::Sensor *vin_voltage_sensor_{nullptr};
+    sensor::Sensor *vin_current_sensor_{nullptr};
+    sensor::Sensor *aps_voltage_sensor_{nullptr};
+    sensor::Sensor *pmu_temperature_sensor_{nullptr};
+    sensor::Sensor *coulomb_in_sensor_{nullptr};
+    sensor::Sensor *coulomb_out_sensor_{nullptr};
+    sensor::Sensor *coulomb_delta_sensor_{nullptr};
+    binary_sensor::BinarySensor *vbus_present_sensor_{nullptr};
+    binary_sensor::BinarySensor *battery_present_sensor_{nullptr};
+    binary_sensor::BinarySensor *warning_level_sensor_{nullptr};
     float brightness_{1.0f};
     float curr_brightness_{-1.0f};
     AXP192Model model_;
@@ -69,6 +133,7 @@ protected:
     void  UpdateBrightness();
     bool  GetBatState();
     bool  GetChargingState();
+    bool  GetVBusPresent();
     uint8_t  GetBatData();
 
     void  EnableCoulombcounter(void);
@@ -114,6 +179,10 @@ protected:
     void SetCoulombClear();
     void SetLDO2( bool State );
     void SetLDO3( bool State );
+    void SetDCDC1(bool State);
+    void SetDCDC3(bool State);
+    void SetGPIO1(bool State);
+    void SetGPIO2(bool State);
     void SetAdcState(bool State);
 
     void PowerOff();
@@ -128,6 +197,42 @@ protected:
     uint32_t Read32bit( uint8_t Addr );
     void ReadBuff( uint8_t Addr , uint8_t Size , uint8_t *Buff );
 };
+
+#ifdef USE_SWITCH
+class AXP192Switch : public switch_::Switch, public Parented<AXP192Component> {
+ public:
+  void set_type(AXP192SwitchType type) { this->type_ = type; }
+
+ protected:
+  void write_state(bool state) override;
+
+  AXP192SwitchType type_;
+};
+#endif
+
+#ifdef USE_BUTTON
+class AXP192Button : public button::Button, public Parented<AXP192Component> {
+ public:
+  void set_type(AXP192ButtonType type) { this->type_ = type; }
+
+ protected:
+  void press_action() override;
+
+  AXP192ButtonType type_;
+};
+#endif
+
+#ifdef USE_NUMBER
+class AXP192Number : public number::Number, public Parented<AXP192Component> {
+ public:
+  void set_type(AXP192NumberType type) { this->type_ = type; }
+
+ protected:
+  void control(float value) override;
+
+  AXP192NumberType type_;
+};
+#endif
 
 }
 }

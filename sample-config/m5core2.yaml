@@ -1,7 +1,10 @@
 esphome:
   name: m5stack-core2
-  platform: ESP32
+
+esp32:
   board: m5stack-core-esp32
+  framework:
+    type: arduino
   
   # Use this to hardlink the component if it is not discovered
   # includes:
@@ -13,12 +16,12 @@ wifi:
 
   # Enable fallback hotspot (captive portal) in case wifi connection fails
   ap:
-    ssid: "XXX"
-    password: "XXX"
+    ssid: "AXP192 Fallback"
+    password: "fallback1234"
 
 substitutions:
-  devicename: ${devicename}
-  upper_devicename: ${upper_devicename} 
+  devicename: m5core2
+  upper_devicename: M5Core2
 
 captive_portal:
 
@@ -29,29 +32,104 @@ logger:
 api:
 
 ota:
+  - platform: esphome
 
 web_server:
+
+external_components:
+  - source:
+      type: local
+      path: ../components
+    components: [axp192]
 
 # AXP192 power management - must be present to initialize TFT power on
 sensor:
   - platform: axp192
+    id: pmu
     model: M5CORE2
     address: 0x34
     i2c_id: bus_a
     update_interval: 30s
-	brightness: 75%
+    brightness: 75%
     battery_level:
       name: "${upper_devicename} Battery Level"
       id: "${devicename}_batterylevel"
-    charging:
-      name: "Charging Status"
-      id: "chargingstatus"
+    battery_voltage:
+      name: "${upper_devicename} Battery Voltage"
+    battery_charge_current:
+      name: "${upper_devicename} Battery Charge Current"
+    battery_discharge_current:
+      name: "${upper_devicename} Battery Discharge Current"
+    battery_power:
+      name: "${upper_devicename} Battery Power"
+    vbus_voltage:
+      name: "${upper_devicename} VBUS Voltage"
+    vbus_current:
+      name: "${upper_devicename} VBUS Current"
+    vin_voltage:
+      name: "${upper_devicename} VIN Voltage"
+    vin_current:
+      name: "${upper_devicename} VIN Current"
+    aps_voltage:
+      name: "${upper_devicename} APS Voltage"
+    pmu_temperature:
+      name: "${upper_devicename} PMU Temperature"
+    coulomb_in:
+      name: "${upper_devicename} Coulomb In"
+    coulomb_out:
+      name: "${upper_devicename} Coulomb Out"
+    coulomb_delta:
+      name: "${upper_devicename} Coulomb Delta"
 
   - platform: wifi_signal
     name: ${upper_devicename} WiFi Signal
     id: wifi_dbm
   - platform: uptime
     name: ${upper_devicename} Uptime
+
+binary_sensor:
+  - platform: axp192
+    axp192_id: pmu
+    charging:
+      name: "Charging Status"
+      id: "chargingstatus"
+    vbus_present:
+      name: "${upper_devicename} VBUS Present"
+    battery_present:
+      name: "${upper_devicename} Battery Present"
+    warning_level:
+      name: "${upper_devicename} Warning Level"
+
+switch:
+  - platform: axp192
+    axp192_id: pmu
+    model: M5CORE2
+    ldo2:
+      name: "${upper_devicename} PMU LDO2"
+    ldo3:
+      name: "${upper_devicename} PMU LDO3"
+    dcdc1:
+      name: "${upper_devicename} PMU DCDC1"
+    dcdc3:
+      name: "${upper_devicename} PMU DCDC3"
+    speaker_enable:
+      name: "${upper_devicename} Speaker Enable"
+    green_led:
+      name: "${upper_devicename} Green LED"
+    adc_enable:
+      name: "${upper_devicename} ADC Enable"
+
+button:
+  - platform: axp192
+    axp192_id: pmu
+    coulomb_clear:
+      name: "${upper_devicename} Coulomb Clear"
+
+number:
+  - platform: axp192
+    axp192_id: pmu
+    charge_current_limit:
+      name: "${upper_devicename} Charge Current Limit"
 
 spi:
   clk_pin: GPIO18
@@ -65,15 +143,16 @@ i2c:
      scan: True
 
 font:
-  - file: 'fonts/arial.ttf'
+  - file: 'gfonts://Roboto'
     id: font1
     size: 8
 
 # # builtin 80x160 TFT
 display:
-  - platform: ili9341
+  - platform: ili9xxx
     model: M5STACK
     cs_pin: 5
     dc_pin: 15
+    invert_colors: false
     lambda: |-
       it.line(20, 20, 200, 200);

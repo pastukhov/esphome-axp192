@@ -1,9 +1,12 @@
 esphome:
   name: m5stick-c
-  platform: ESP32
-  board: m5stick-c
   platformio_options:
     upload_speed: 115200
+
+esp32:
+  board: m5stick-c
+  framework:
+    type: arduino
 
   # Use this to hardlink the component if it is not discovered
   # includes:
@@ -15,8 +18,8 @@ wifi:
 
   # Enable fallback hotspot (captive portal) in case wifi connection fails
   ap:
-    ssid: "XXX"
-    password: "XXX"
+    ssid: "AXP192 Fallback"
+    password: "fallback1234"
 
 # Enable logging
 logger:
@@ -30,8 +33,15 @@ captive_portal:
 api:
 
 ota:
+  - platform: esphome
 
 web_server:
+
+external_components:
+  - source:
+      type: local
+      path: ../components
+    components: [axp192]
 
 binary_sensor:
 
@@ -115,7 +125,7 @@ i2c:
      scan: True
 
 font:
-  - file: 'fonts/arial.ttf'
+  - file: 'gfonts://Roboto'
     id: font1
     size: 8
 

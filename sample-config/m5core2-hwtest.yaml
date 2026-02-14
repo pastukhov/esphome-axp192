@@ -1,0 +1,115 @@
+esphome:
+  name: m5core2-hwtest
+
+esp32:
+  board: m5stack-core-esp32
+  framework:
+    type: arduino
+
+external_components:
+  - source:
+      type: local
+      path: /home/artem/repos/esphome-axp192/components
+    components: [axp192]
+
+logger:
+
+api:
+
+ota:
+  - platform: esphome
+
+wifi:
+  ssid: "test-ssid"
+  password: "test-password"
+  ap:
+    ssid: "m5core2-fallback"
+    password: "fallback1234"
+
+captive_portal:
+
+i2c:
+  - id: bus_a
+    sda: GPIO21
+    scl: GPIO22
+    scan: true
+
+sensor:
+  - platform: axp192
+    id: pmu
+    model: M5CORE2
+    address: 0x34
+    i2c_id: bus_a
+    update_interval: 10s
+    brightness: 75%
+    battery_level:
+      name: "Battery Level"
+    battery_voltage:
+      name: "Battery Voltage"
+    battery_charge_current:
+      name: "Battery Charge Current"
+    battery_discharge_current:
+      name: "Battery Discharge Current"
+    battery_power:
+      name: "Battery Power"
+    vbus_voltage:
+      name: "VBUS Voltage"
+    vbus_current:
+      name: "VBUS Current"
+    vin_voltage:
+      name: "VIN Voltage"
+    vin_current:
+      name: "VIN Current"
+    aps_voltage:
+      name: "APS Voltage"
+    pmu_temperature:
+      name: "PMU Temperature"
+    coulomb_in:
+      name: "Coulomb In"
+    coulomb_out:
+      name: "Coulomb Out"
+    coulomb_delta:
+      name: "Coulomb Delta"
+
+binary_sensor:
+  - platform: axp192
+    axp192_id: pmu
+    charging:
+      name: "Charging"
+    vbus_present:
+      name: "VBUS Present"
+    battery_present:
+      name: "Battery Present"
+    warning_level:
+      name: "Warning Level"
+
+switch:
+  - platform: axp192
+    axp192_id: pmu
+    model: M5CORE2
+    ldo2:
+      name: "PMU LDO2"
+    ldo3:
+      name: "PMU LDO3"
+    dcdc1:
+      name: "PMU DCDC1"
+    dcdc3:
+      name: "PMU DCDC3"
+    speaker_enable:
+      name: "Speaker Enable"
+    green_led:
+      name: "Green LED"
+    adc_enable:
+      name: "ADC Enable"
+
+button:
+  - platform: axp192
+    axp192_id: pmu
+    coulomb_clear:
+      name: "Coulomb Clear"
+
+number:
+  - platform: axp192
+    axp192_id: pmu
+    charge_current_limit:
+      name: "Charge Current Limit"
